@@ -1,0 +1,21 @@
+{
+  "name": "aws-cfn-subdomain-hosting",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "deploy": "node ./deploy.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/erwinverdonk/aws-cfn-subdomain-hosting.git"
+  },
+  "author": "Erwin Verdonk <e.verdonk@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/erwinverdonk/aws-cfn-subdomain-hosting/issues"
+  },
+  "homepage": "https://github.com/erwinverdonk/aws-cfn-subdomain-hosting#readme",
+  "devDependencies": {
+    "aws-sdk": "^2.184.0"
+  }
+}
