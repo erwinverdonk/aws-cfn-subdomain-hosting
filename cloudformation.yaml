@@ -1,0 +1,86 @@
+# aws --profile autotrader cloudformation create-stack --stack-name myteststack2 --template-body file:///users/erwinverdonk/erwinverdonk_io_cloudformation.yaml --parameters ParameterKey=Subdomain,ParameterValue=dragdrop-5525 ParameterKey=PrimaryDomain,ParameterValue=erwinverdonk.io
+Parameters:
+  Subdomain:
+    Description: "Subdomain"
+    Type: String
+    Default: ""
+  PrimaryDomain:
+    Description: "Primary Domain"
+    Type: String
+    Default: ""
+
+Resources:
+  DNS:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Sub "${PrimaryDomain}."
+      Name: !Sub "${Subdomain}.${PrimaryDomain}."
+      Type: CNAME
+      TTL: "300"
+      ResourceRecords:
+      - !GetAtt CloudFront.DomainName
+
+  S3BucketEmpty:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !ImportValue S3EmptyBucketFunction
+      BucketName: !GetAtt S3Bucket.BucketName
+
+  S3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Sub "${Subdomain}.${PrimaryDomain}"
+      VersioningConfiguration:
+        Status: "Enabled"
+    DeletionPolicy: Delete
+
+  S3BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !GetAtt S3Bucket.BucketName
+      PolicyDocument:
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            "AWS": !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}"
+          Action: "s3:GetObject"
+          Resource: !Sub
+            - "${S3BucketArn}/*"
+            - S3BucketArn: !GetAtt S3Bucket.Arn
+
+#  LambdaRewrite:
+#    Type: "AWS::Lambda"
+
+  CloudFrontOriginAccessIdentity:
+    Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !GetAtt S3Bucket.Arn
+
+  CloudFront:
+    Type: AWS::CloudFront::Distribution
+    DependsOn: "S3BucketPolicy"
+    Properties:
+      DistributionConfig:
+        Origins:
+        - DomainName: !GetAtt S3Bucket.DomainName
+          Id: !Sub "${Subdomain}.${PrimaryDomain}"
+          S3OriginConfig:
+            OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}"
+        Enabled: "true"
+        HttpVersion: "http2"
+        Aliases:
+        - !Sub "${Subdomain}.${PrimaryDomain}"
+        PriceClass: "PriceClass_100"
+        DefaultRootObject: index.html
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: "true"
+        DefaultCacheBehavior:
+          TargetOriginId: !Sub "${Subdomain}.${PrimaryDomain}"
+#          LambdaFunctionAssociations: null
+          ViewerProtocolPolicy: "allow-all"
+          Compress: true
+          ForwardedValues:
+            QueryString: "false"
+            Cookies:
+              Forward: none
