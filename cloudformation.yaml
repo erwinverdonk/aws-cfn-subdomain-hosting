@@ -22,9 +22,10 @@ Resources:
 
   S3BucketEmpty:
     Type: AWS::CloudFormation::CustomResource
+    DependsOn: "S3Bucket"
     Properties:
-      ServiceToken: !ImportValue S3EmptyBucketFunction
-      BucketName: !GetAtt S3Bucket.BucketName
+      ServiceToken: !ImportValue S3EmptyBucketFunctionArn
+      BucketName: !Sub "${Subdomain}.${PrimaryDomain}"
 
   S3Bucket:
     Type: "AWS::S3::Bucket"
@@ -37,7 +38,7 @@ Resources:
   S3BucketPolicy:
     Type: "AWS::S3::BucketPolicy"
     Properties:
-      Bucket: !GetAtt S3Bucket.BucketName
+      Bucket: !Sub "${Subdomain}.${PrimaryDomain}"
       PolicyDocument:
         Statement:
         - Effect: "Allow"
