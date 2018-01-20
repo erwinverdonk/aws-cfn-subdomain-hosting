@@ -19,7 +19,7 @@ require('aws-cfn-custom-resource-s3-empty-bucket').default.then(_ => {
 
   const fs = require('fs');
   const cf = new AWS.CloudFormation();
-  const cfTemplate = fs.readFileSync('cloudformation.yaml');
+  const cfTemplate = fs.readFileSync(__dirname + '/../src/cloudformation.yaml');
 
   cf.createStack({
     StackName: stackName,

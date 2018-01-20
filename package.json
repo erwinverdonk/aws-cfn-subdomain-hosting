@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "deploy": "node ./deploy.js"
+    "deploy": "node ./tasks/deploy.js"
   },
   "repository": {
     "type": "git",
