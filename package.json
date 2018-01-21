@@ -2,7 +2,7 @@
   "name": "aws-cfn-subdomain-hosting",
   "version": "1.0.0",
   "description": "",
-  "main": "tasks/deploy.js",
+  "main": "bin/index.js",
   "scripts": {
     "deploy": "node ./tasks/deploy.js"
   },
@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/erwinverdonk/aws-cfn-subdomain-hosting#readme",
   "dependencies": {
-    "aws-sdk": "^2.184.0",
-    "aws-cfn-custom-resource-s3-empty-bucket": "git+https://github.com/erwinverdonk/aws-cfn-custom-resource-s3-empty-bucket.git"
+    "aws-cfn-custom-resource-s3-empty-bucket": "git+https://github.com/erwinverdonk/aws-cfn-custom-resource-s3-empty-bucket.git",
+    "aws-sdk": "^2.184.0"
   }
 }

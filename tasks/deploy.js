@@ -1,5 +1,6 @@
-exports.default = (() => {
-  return require('aws-cfn-custom-resource-s3-empty-bucket').default.then(_ => {
+exports.default = require('aws-cfn-custom-resource-s3-empty-bucket')
+  .deploy()
+  .then(_ => {
     if(process.argv.length < 3){
       throw new Error('No domain argument provided')
     }
@@ -20,7 +21,7 @@ exports.default = (() => {
 
     const fs = require('fs');
     const cf = new AWS.CloudFormation();
-    const cfTemplate = fs.readFileSync(__dirname + '/../src/cloudformation.yaml');
+    const cfTemplate = fs.readFileSync(__dirname + '/../lib/cloudformation.yaml');
 
     return cf.createStack({
       StackName: stackName,
@@ -61,5 +62,5 @@ exports.default = (() => {
         console.error(_);
       }
     });
-  });
-})();
+  }
+);
