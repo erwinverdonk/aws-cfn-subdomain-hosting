@@ -18,6 +18,7 @@
   "homepage": "https://github.com/erwinverdonk/aws-cfn-subdomain-hosting#readme",
   "dependencies": {
     "aws-cfn-custom-resource-s3-empty-bucket": "git+https://github.com/erwinverdonk/aws-cfn-custom-resource-s3-empty-bucket.git",
-    "aws-sdk": "^2.184.0"
+    "aws-sdk": "^2.184.0",
+    "minimist": "^1.2.0"
   }
 }

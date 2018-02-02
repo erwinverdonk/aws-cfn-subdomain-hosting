@@ -1,5 +1,12 @@
-# aws --profile autotrader cloudformation create-stack --stack-name myteststack2 --template-body file:///users/erwinverdonk/erwinverdonk_io_cloudformation.yaml --parameters ParameterKey=Subdomain,ParameterValue=dragdrop-5525 ParameterKey=PrimaryDomain,ParameterValue=erwinverdonk.io
 Parameters:
+  HasOAI:
+    Description: "Flag indicating whether OAI should be used"
+    Type: Number
+    Default: 0
+  LambdaEdgeArn:
+    Description: "Lambda@Edge Function Arn"
+    Type: String
+    Default: ""
   Subdomain:
     Description: "Subdomain"
     Type: String
@@ -8,6 +15,18 @@ Parameters:
     Description: "Primary Domain"
     Type: String
     Default: ""
+
+Conditions:
+  _HasOAI: !Equals [ !Ref HasOAI, 1 ]
+  _HasNotOAI: !Not [ !Equals [ !Ref HasOAI, 1 ] ]
+  _HasLambdaEdge: !Not [ !Equals [ !Ref LambdaEdgeArn, "" ] ]
+  _HasNotLambdaEdge: !Equals [ !Ref LambdaEdgeArn, "" ]
+  _HasLambdaEdgeAndOAI: !And
+    - !Condition _HasOAI
+    - !Condition _HasLambdaEdge
+  _HasNotLambdaEdgeAndOAI: !And
+    - !Condition _HasNotOAI
+    - !Condition _HasNotLambdaEdge
 
 Resources:
   DNS:
@@ -42,17 +61,17 @@ Resources:
       PolicyDocument:
         Statement:
         - Effect: "Allow"
-          Principal:
-            "AWS": !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}"
+          Principal: !If
+            - _HasOAI
+            - AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}"
+            - "*"
           Action: "s3:GetObject"
           Resource: !Sub
             - "${S3BucketArn}/*"
             - S3BucketArn: !GetAtt S3Bucket.Arn
 
-#  LambdaRewrite:
-#    Type: "AWS::Lambda"
-
   CloudFrontOriginAccessIdentity:
+    Condition: _HasOAI
     Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
     Properties:
       CloudFrontOriginAccessIdentityConfig:
@@ -64,10 +83,31 @@ Resources:
     Properties:
       DistributionConfig:
         Origins:
-        - DomainName: !GetAtt S3Bucket.DomainName
-          Id: !Sub "${Subdomain}.${PrimaryDomain}"
-          S3OriginConfig:
-            OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}"
+          - DomainName: !If
+            - _HasLambdaEdgeAndOAI
+
+            # When Lambda@Edge and OAI are used together it is important to use the S3 domain without region and
+            # specify region in the Lambda@Edge origin-request, else it will not work.
+            - !GetAtt S3Bucket.DomainName
+
+            # It's important to not use '!GetAtt S3Bucket.DomainName' as it can take hours before your S3 bucket
+            # contents are replicated to 'us-east-1' which is used as default by CloudFront for S3 origin URL
+            # 'bucketName.s3.amazonaws.com'.
+            - !Sub "${Subdomain}.${PrimaryDomain}.s3-${AWS::Region}.amazonaws.com"
+            Id: !Sub "${Subdomain}.${PrimaryDomain}"
+
+            # When OAI is used we set up a S3 origin with Origin Access Identity for no direct S3 bucket access.
+            S3OriginConfig: !If
+              - _HasOAI
+              - OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}"
+              - !Ref "AWS::NoValue"
+
+            # When OAI is not used we set up S3 as a custom origin for faster intial access, as S3 bucket is read-only for the public
+            # and therefore can bypass the AWS CloudFront replication.
+            CustomOriginConfig: !If
+              - _HasNotOAI
+              - OriginProtocolPolicy: "match-viewer"
+              - !Ref "AWS::NoValue"
         Enabled: "true"
         HttpVersion: "http2"
         Aliases:
@@ -78,7 +118,18 @@ Resources:
           CloudFrontDefaultCertificate: "true"
         DefaultCacheBehavior:
           TargetOriginId: !Sub "${Subdomain}.${PrimaryDomain}"
-#          LambdaFunctionAssociations: null
+          LambdaFunctionAssociations: !If
+            - _HasLambdaEdge
+            -
+              - EventType: "origin-request"
+                LambdaFunctionARN: !Ref LambdaEdgeArn
+              - EventType: "origin-response"
+                LambdaFunctionARN: !Ref LambdaEdgeArn
+              - EventType: "viewer-request"
+                LambdaFunctionARN: !Ref LambdaEdgeArn
+              - EventType: "viewer-response"
+                LambdaFunctionARN: !Ref LambdaEdgeArn
+            - !Ref "AWS::NoValue"
           ViewerProtocolPolicy: "allow-all"
           Compress: true
           ForwardedValues:
