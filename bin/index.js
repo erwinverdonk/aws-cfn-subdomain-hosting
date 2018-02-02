@@ -65,12 +65,9 @@ exports.deploy = args => {
 				.promise()
 				.catch(_ => {
 					if (_.code === 'AlreadyExistsException') {
-						cf
-							.updateStack(stackParams)
-							.promise()
-							.catch(_ => console.error(_));
+						return cf.updateStack(stackParams).promise();
 					} else {
-						console.error(_);
+						throw _;
 					}
 				});
 		});
