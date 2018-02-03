@@ -43,22 +43,16 @@ exports.deploy = args => {
 						ParameterKey: 'PrimaryDomain',
 						ParameterValue: primaryDomain,
 					},
+					{
+						ParameterKey: 'HasOAI',
+						ParameterValue: hasOAI.toString(),
+					},
+					{
+						ParameterKey: 'LambdaEdgeArn',
+						ParameterValue: lambdaEdgeArn ? lambdaEdgeArn : '',
+					},
 				],
 			};
-
-			if (lambdaEdgeArn) {
-				stackParams.Parameters.push({
-					ParameterKey: 'LambdaEdgeArn',
-					ParameterValue: lambdaEdgeArn,
-				});
-			}
-
-			if (hasOAI) {
-				stackParams.Parameters.push({
-					ParameterKey: 'HasOAI',
-					ParameterValue: hasOAI ? '1' : '0',
-				});
-			}
 
 			return cf
 				.createStack(stackParams)

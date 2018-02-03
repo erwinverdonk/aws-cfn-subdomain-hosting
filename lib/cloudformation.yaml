@@ -1,8 +1,11 @@
 Parameters:
   HasOAI:
     Description: "Flag indicating whether OAI should be used"
-    Type: Number
-    Default: 0
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
   LambdaEdgeArn:
     Description: "Lambda@Edge Function Arn"
     Type: String
@@ -17,8 +20,8 @@ Parameters:
     Default: ""
 
 Conditions:
-  _HasOAI: !Equals [ !Ref HasOAI, 1 ]
-  _HasNotOAI: !Not [ !Equals [ !Ref HasOAI, 1 ] ]
+  _HasOAI: !Equals [ !Ref HasOAI, "true" ]
+  _HasNotOAI: !Not [ !Equals [ !Ref HasOAI, "true" ] ]
   _HasLambdaEdge: !Not [ !Equals [ !Ref LambdaEdgeArn, "" ] ]
   _HasNotLambdaEdge: !Equals [ !Ref LambdaEdgeArn, "" ]
   _HasLambdaEdgeAndOAI: !And
