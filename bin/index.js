@@ -21,7 +21,7 @@ exports.deploy = args => {
 	const stackName = args.domain.replace(/[^a-z0-9-]/gi, '-');
 
 	const AWS = require('aws-sdk');
-	AWS.config.update({ region: region });
+	AWS.config = new AWS.Config({ region });
 
 	return require('aws-cfn-custom-resource-s3-empty-bucket')
 		.deploy()
