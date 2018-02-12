@@ -54,12 +54,20 @@ exports.deploy = args => {
 				],
 			};
 
+			console.log(`Creation of CloudFormation stack '${stackName}' started`);
+
 			return cf
 				.createStack(stackParams)
 				.promise()
+				.then(_ => console.log(`Creation of CloudFormation stack '${stackName}' in progress in the background`))
 				.catch(_ => {
 					if (_.code === 'AlreadyExistsException') {
-						return cf.updateStack(stackParams).promise();
+						console.log(`CloudFormation stack '${stackName}' already exists`);
+						console.log(`Update of CloudFormation stack '${stackName}' started`);
+
+						return cf.updateStack(stackParams)
+							.promise()
+							.then(_ => console.log(`Update of CloudFormation stack '${stackName}' in progress in the background`));
 					} else {
 						throw _;
 					}
