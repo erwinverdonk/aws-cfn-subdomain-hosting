@@ -1,5 +1,9 @@
+const AWS = require('aws-sdk');
+
 exports.deploy = args => {
-  if (!args.region && !process.env.AWS_DEFAULT_REGION) {
+  const region = args.region ? args.region : process.env.AWS_DEFAULT_REGION;
+
+  if (!region) {
     throw new Error('No region provided');
   }
 
@@ -13,17 +17,13 @@ exports.deploy = args => {
     throw new Error('Invalid domain argument provided');
   }
 
-  const region = args.region ? args.region : process.env.AWS_DEFAULT_REGION;
   const lambdaEdgeArn = args.lambdaEdgeArn;
   const hasOAI = !!args.hasOAI;
   const subdomain = domainSplit[0];
   const primaryDomain = domainSplit[1];
   const stackName = args.domain.replace(/[^a-z0-9-]/gi, '-');
 
-  const AWS = require('aws-sdk');
-  AWS.config = new AWS.Config({ region });
-
-  const cf = new AWS.CloudFormation();
+  const cf = new AWS.CloudFormation({ region });
 
   return require('aws-cfn-custom-resource-s3-empty-bucket')
     .deploy()
@@ -56,27 +56,18 @@ exports.deploy = args => {
         ],
       };
 
-      console.log(`Creation of CloudFormation stack '${stackName}' started`);
+      console.log(`Create or update of CloudFormation stack '${stackName}' started`);
 
       return cf
         .createStack(stackParams)
         .promise()
-        .then(_ => {
-          console.log(`Creation of CloudFormation stack '${stackName}' in progress in the background`);
-          return { stackName, pendingResourceState: 'stackCreateComplete' };
-        })
+        .then(_ => ({ stackName, pendingResourceState: 'stackCreateComplete' }))
         .catch(_ => {
           if (_.code === 'AlreadyExistsException') {
-            console.log(`CloudFormation stack '${stackName}' already exists`);
-            console.log(`Update of CloudFormation stack '${stackName}' started`);
-
             return cf
               .updateStack(stackParams)
               .promise()
-              .then(_ => {
-                return { stackName, pendingResourceState: 'stackUpdateComplete' };
-                console.log(`Update of CloudFormation stack '${stackName}' in progress in the background`);
-              })
+              .then(_ => ({ stackName, pendingResourceState: 'stackUpdateComplete' }))
               .catch(_ => {
                 if (_.message.toLowerCase().indexOf('no update') > -1) {
                   return { stackName, pendingResourceState: 'stackExists' };
