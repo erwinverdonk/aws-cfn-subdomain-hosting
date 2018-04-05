@@ -11,7 +11,7 @@ exports.deploy = args => {
     throw new Error('No domain argument provided');
   }
 
-  const domainSplit = args.domain.split(/\.(?=[^.]+\.[^.]+$)/).filter(_ => !!_);
+  const domainSplit = args.domain.split(/(?<=^[^.]+)\./).filter(_ => !!_);
 
   if (domainSplit.length < 2) {
     throw new Error('Invalid domain argument provided');
