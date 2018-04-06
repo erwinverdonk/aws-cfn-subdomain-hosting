@@ -1,7 +1,6 @@
 {
   "name": "aws-cfn-subdomain-hosting",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.1",
   "main": "bin/index.js",
   "scripts": {
     "deploy": "node ./tasks/deploy.js"

@@ -6,6 +6,13 @@ Parameters:
     AllowedValues:
       - "true"
       - "false"
+  VersioningStatus:
+    Description: "Status indicating whether versioning should be used"
+    Type: String
+    Default: "Suspended"
+    AllowedValues:
+      - "Enabled"
+      - "Suspended"
   LambdaEdgeArn:
     Description: "Lambda@Edge Function Arn"
     Type: String
@@ -54,7 +61,7 @@ Resources:
     Properties:
       BucketName: !Sub "${Subdomain}.${PrimaryDomain}"
       VersioningConfiguration:
-        Status: "Enabled"
+        Status: !Ref VersioningStatus
     DeletionPolicy: Delete
 
   S3BucketPolicy:
